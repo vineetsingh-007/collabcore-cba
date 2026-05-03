@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collab-config
+data:
+  NODE_ENV: "production"
+  MONGO_URI: "mongodb://mongodb-service:27017/collab"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: collab-secret
+type: Opaque
+data:
+  # The JWT_SECRET must be base64 encoded.
+  # 'super_secret_jwt_key_12345' encoded is 'c3VwZXJfc2VjcmV0X2p3dF9rZXlfMTIzNDU='
+  JWT_SECRET: "c3VwZXJfc2VjcmV0X2p3dF9rZXlfMTIzNDU="

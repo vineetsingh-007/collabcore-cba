@@ -1,6 +1,6 @@
+const cors = require("cors");
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
@@ -8,45 +8,56 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config();
 
-// Connect to database
+// Connect to MongoDB
 connectDB();
 
 const app = express();
 const server = http.createServer(app);
 
-// Simple Socket.io setup replacing Supabase Realtime
+// Middleware - CORS configuration
+const corsOptions = {
+  origin: ["http://localhost:3000", "http://localhost:5007", "http://frontend:8080", "*"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+
+// Socket.io setup with CORS
 const io = new Server(server, {
-  cors: {
-    origin: '*', // For development
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
-  }
+  cors: corsOptions
 });
 
-io.on('connection', (socket) => {
-  console.log('User connected to socket:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("🔌 User connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
   });
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Routes
+// Routes (IMPORTANT: all prefixed with /api)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/profiles', require('./routes/profiles'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/notifications', require('./routes/notifications'));
 
+// Health check route
 app.get('/', (req, res) => {
-  res.send('Collab Canvas API is running');
+  res.send('🚀 Collab Canvas API is running');
 });
 
-const PORT = process.env.PORT || 5000;
+// Error handler (optional but useful)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Server Error' });
+});
+
+// Start server
+const PORT = process.env.PORT || 5001;
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });

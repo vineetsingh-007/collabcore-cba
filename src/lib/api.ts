@@ -1,60 +1,60 @@
-const API_URL = 'http://localhost:5001/api';
+// Use environment variable for API URL, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5555/api';
 
-const getToken = () => localStorage.getItem('collab_token');
-
-const handleResponse = async (response: Response) => {
-  const data = await response.json();
-  if (!response.ok) {
-    const error = (data && data.message) || response.statusText;
-    throw new Error(error);
+const handleResponse = async (res: Response) => {
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('collab_token');
+      localStorage.removeItem('collab_user');
+      window.location.href = '/login';
+    }
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || 'API Error');
   }
-  return data;
+  return res.json();
 };
 
 export const api = {
-  get: async (endpoint: string) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'GET',
+  get: async (url: string) => {
+    const res = await fetch(API_URL + url, {
       headers: {
-        'Content-Type': 'application/json',
-        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-      },
+        Authorization: `Bearer ${localStorage.getItem("collab_token") || ""}`
+      }
     });
-    return handleResponse(response);
+    return handleResponse(res);
   },
 
-  post: async (endpoint: string, body: any) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'POST',
+  post: async (url: string, data: any) => {
+    const res = await fetch(API_URL + url, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("collab_token") || ""}`
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(data)
     });
-    return handleResponse(response);
+    return handleResponse(res);
   },
 
-  put: async (endpoint: string, body: any) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'PUT',
+  put: async (url: string, data: any) => {
+    const res = await fetch(API_URL + url, {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
-        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("collab_token") || ""}`
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(data)
     });
-    return handleResponse(response);
+    return handleResponse(res);
   },
 
-  delete: async (endpoint: string) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'DELETE',
+  delete: async (url: string) => {
+    const res = await fetch(API_URL + url, {
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
-        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-      },
+        Authorization: `Bearer ${localStorage.getItem("collab_token") || ""}`
+      }
     });
-    return handleResponse(response);
-  },
+    return handleResponse(res);
+  }
 };

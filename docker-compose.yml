@@ -1,0 +1,54 @@
+services:
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - collab-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    # No ports mapped to the host; only accessible internally
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - collab-network
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/collab
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "5006:80"
+    depends_on:
+      - backend
+    networks:
+      - collab-network
+
+networks:
+  collab-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
