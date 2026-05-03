@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Collab Canvas CI
 
 on:
   push:
@@ -9,14 +9,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
 
-      - name: Build Backend
-        run: docker build -t backend ./backend
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Build Frontend
-        run: docker build -t frontend .
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
 
-      - name: Done
-        run: echo "Build Successful"
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm install
+
+    - name: Install frontend dependencies
+      run: npm install
+
+    - name: Build frontend
+      run: npm run build
+
+    - name: Build Docker backend image
+      run: docker build -t collab-canvas-main2-backend ./backend
+
+    - name: Build Docker frontend image
+      run: docker build -t collab-canvas-main2-frontend .
